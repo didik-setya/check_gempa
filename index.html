@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.9.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="leaflet/leaflet.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="leaflet/leaflet.js"></script>
+    <style>
+        #openMap {
+            height: 80vh;
+            width: 100%;
+            background-color: #dbdbdb;
+        }
+
+        #loadingimg {
+            width: 5%;
+        }
+
+        .contentLoading {
+            padding: 10% 0px;
+        }
+
+        @media screen and (max-width: 991px) {
+            
+        }
+
+        @media screen and (max-width: 768px) {
+            #openMap {
+                height: 75vh;
+            }
+
+            #loadingimg {
+                width: 7%;
+            }
+        }
+
+        @media screen and (max-width: 576px) {
+            #openMap {
+                height: 70vh;
+            }
+
+            #loadingimg {
+                width: 15%;
+            }
+
+            .contentLoading {
+                padding: 20% 0px;
+            }
+        }
+    </style>
+    <title>Dex</title>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg bg-danger navbar-dark">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">Navbar</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+            <div class="navbar-nav mx-auto">
+              <a class="nav-link active" aria-current="page" href="#">Home</a>
+              <a class="nav-link" href="#">Features</a>
+              <a class="nav-link" href="#">Pricing</a>
+              <a class="nav-link disabled" aria-disabled="true">Disabled</a>
+            </div>
+          </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+
+        <div class="row">
+
+            <div class="col-12 mt-1">
+                <div id="openMap">
+                    
+                </div>
+            </div>
+        </div>
+
+        <div class="row my-3">
+            <div class="col-4">
+                <button class="btn w-100 btn-danger" onclick="click_the_button(1)"><i class="fas fa-wave-square"></i> Gempa Bumi Terbaru</button>
+            </div>
+            <div class="col-4">
+                <button class="btn w-100 btn-warning" onclick="click_the_button(2)"><i class="fas fa-wave-square"></i> Gempa Bumi M 5.0+</button>
+            </div>
+            <div class="col-4">
+                <button class="btn w-100 btn-success" onclick="click_the_button(3)"><i class="fas fa-wave-square"></i> Gempa Bumi Dirasakan</button>
+            </div>
+        </div>
+    </div>
+
+   
+    <script>
+        let map
+        $(document).ready(function(){
+            get_data_gempa_terbaru()
+        })
+
+        function get_data_gempa_terbaru(){
+            $.ajax({
+                url: 'https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json',
+                type: 'GET',
+                dataType: 'JSON',
+                success: function(d){
+                    let data = d.Infogempa.gempa
+                    append_mark_to_map(data, 1)
+                },
+                error: function(xhr, status, error){
+                    alert(xhr +' '+ error + ' Get Data Gempa Terbaru')
+                }
+            })
+        }
+       
+        function get_data_gempa_terkini(){
+            $.ajax({
+                url: 'https://data.bmkg.go.id/DataMKG/TEWS/gempaterkini.json',
+                type: 'GET',
+                dataType: 'JSON',
+                success: function(d){
+                    let data = d.Infogempa.gempa
+                    append_mark_to_map(data, 2)
+                },
+                error: function(xhr, status, error){
+                    alert(xhr +' '+ error + ' Get Data Gempa Terkini')
+                }
+            })
+        }
+
+        function get_data_gempa_dirasakan(){
+            $.ajax({
+                url: 'https://data.bmkg.go.id/DataMKG/TEWS/gempadirasakan.json',
+                type: 'GET',
+                dataType: 'JSON',
+                success: function(d){
+                    let data = d.Infogempa.gempa
+                    append_mark_to_map(data, 3)
+                },
+                error: function(xhr, status, error){
+                    alert(xhr +' '+ error + ' Get Data Gempa di Rasakan')
+                }
+            })
+        }
+
+        function append_mark_to_map(data = null, type = null){
+            map = L.map('openMap').setView([-3.19, 122.8], 4)
+            
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+
+            let i;
+            let marker;
+            let iconUrl = '';
+            if(type == 1){
+                iconUrl = 'leaflet/images/redMark.png'
+            } else if(type == 2){
+                iconUrl = 'leaflet/images/yellowMark.png'
+            } else if(type == 3){
+                iconUrl = 'leaflet/images/greenMark.png'
+            }
+
+            let icon = L.icon({
+                iconUrl: iconUrl,
+                iconSize: [30, 38],
+                iconAnchor: [14, 37],
+                popupAnchor: [-3, -76]
+            });
+
+            let waktu
+            let lokasi
+            let magnitude
+            let kedalaman
+            let wilayah
+            let dirasakan
+            let koordinat
+            let splitKoor
+
+            if(data.length && data.length > 1){
+                for(i = 0; i < data.length; i++){
+
+                    if(data[i].Dirasakan){
+                        dirasakan = data[i].Dirasakan
+                    } else {
+                        dirasakan = ''
+                    }
+
+                    waktu = data[i].Tanggal +' '+ data[i].Jam
+                    lokasi = data[i].Bujur+' '+data[i].Lintang
+                    magnitude = data[i].Magnitude
+                    kedalaman = data[i].Kedalaman
+                    wilayah = data[i].Wilayah
+
+                    koordinat = data[i].Coordinates
+                    splitKoor = koordinat.split(",")
+
+                    let popupHtml = '<p><b><i class="fas fa-clock" style="color: #74C0FC;"></i> Waktu : </b> '+waktu+' <p>  <p><b><i class="fas fa-wave-square" style="color: #af0404;"></i> Magnitudo : </b> '+magnitude+' <p>  <p><b><i class="fas fa-search-location" style="color: #63E6BE;"></i> Lokasi : </b>'+lokasi+'<p>  <p><b><i class="fas fa-ruler-vertical" style="color: #B197FC;"></i> Kedalaman : </b>'+kedalaman+'<p>  <p><b><i class="fas fa-map-marked-alt"></i> Wilayah : </b>'+wilayah+'<p>  <p><b><i class="fas fa-radiation" style="color: #FFD43B;"></i> Dirasakan : </b>'+dirasakan+'<p>';
+
+                    let marker = L.marker(splitKoor, {icon: icon}).bindPopup(popupHtml).addTo(map);
+                    }
+
+            } else {
+                    if(data.Dirasakan){
+                        dirasakan = data.Dirasakan
+                    } else {
+                        dirasakan = ''
+                    }
+                    waktu = data.Tanggal +' '+ data.Jam
+                    lokasi = data.Bujur+' '+data.Lintang
+                    magnitude = data.Magnitude
+                    kedalaman = data.Kedalaman
+                    wilayah = data.Wilayah
+
+                    koordinat = data.Coordinates
+                    splitKoor = koordinat.split(",")
+
+                    let popupHtml = '<p><b><i class="fas fa-clock" style="color: #74C0FC;"></i> Waktu : </b> '+waktu+' <p>  <p><b><i class="fas fa-wave-square" style="color: #af0404;"></i> Magnitudo : </b> '+magnitude+' <p>  <p><b><i class="fas fa-search-location" style="color: #63E6BE;"></i> Lokasi : </b>'+lokasi+'<p>  <p><b><i class="fas fa-ruler-vertical" style="color: #B197FC;"></i> Kedalaman : </b>'+kedalaman+'<p>  <p><b><i class="fas fa-map-marked-alt"></i> Wilayah : </b>'+wilayah+'<p>  <p><b><i class="fas fa-radiation" style="color: #FFD43B;"></i> Dirasakan : </b>'+dirasakan+'<p>';
+
+                    let marker = L.marker(splitKoor, {icon: icon}).bindPopup(popupHtml).addTo(map);
+            }
+        }
+
+        function open_loading_animation(){
+            $('#openMap').html('')
+            let htmlLoading = '<div class="contentLoading text-center"><img src="leaflet/images/loading.gif" alt="loading gif" id="loadingimg"><h5>Loading....</h5><small>Please wait...</small></div>'
+            $('#openMap').html(htmlLoading)
+        }
+
+        function click_the_button(type){
+            if(map){
+                map.remove()
+            }
+            open_loading_animation()
+            setTimeout(() => {
+                if(type == 1){
+                    get_data_gempa_terbaru()
+                } else if(type == 2){
+                    get_data_gempa_terkini()
+                } else if(type == 3){
+                    get_data_gempa_dirasakan()
+                }
+            }, 500);
+        }
+    </script>
+</body>
+</html>
